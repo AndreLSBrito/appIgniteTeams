@@ -1,5 +1,5 @@
-import { useState } from 'react';
-
+import { useState, useCallback } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FlatList } from 'react-native';
 
 import { Header } from '@components/Header';
@@ -8,11 +8,31 @@ import {Container}  from './styles';
 import { GroupCard } from '@components/GroupCard';
 import { ListEmpty } from '@components/ListEmpty';
 import { Button } from '@components/Button';
+import { GroupsGetAll } from '@storage/group/groupsGetAll';
 
 
 
 export function Groups() {
-  const [groups,setGroups] = useState<string[]>([])
+  const [groups,setGroups] = useState<string[]>([]);
+
+  const navigation = useNavigation();
+
+  function handleNewGroup(){
+    navigation.navigate('new')
+  }
+
+  async function fetchGroups(){
+    try {
+      const data = await GroupsGetAll();
+      setGroups(data);
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useFocusEffect(useCallback(() => {
+    fetchGroups();
+  }, []));
 
   return (
     <Container>
@@ -35,10 +55,12 @@ export function Groups() {
         ListEmptyComponent={()=> (
           <ListEmpty message="Que tal cadastrar a primeira turma?"/>
         )}
+        showsVerticalScrollIndicator={false}
       />
 
        <Button 
         title="Criar nova turma"
+        onPress={handleNewGroup}
        />
     </Container>
   );
