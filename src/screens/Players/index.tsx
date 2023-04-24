@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { FlatList } from "react-native";
+import { FlatList, Alert } from "react-native";
 import {useRoute} from '@react-navigation/native'
+
 
 import { Container, Form, HeaderList, NumberOfPlayers } from "./styles";
 
@@ -12,18 +13,45 @@ import { Filter } from "@components/Filter";
 import { PlayerCard } from "@components/PlayerCard";
 import { ListEmpty } from "@components/ListEmpty";
 import { Button } from "@components/Button";
+import { AppError } from "@utils/AppError";
+import { playerAddByGroup } from "@storage/player/playerAddByGroup";
+import { playersGetByGroup } from "@storage/player/playersGetByGroup";
+
+type RouteParams = {
+  group: string;
+}
 
 export function Players(){
-
-  type RouteParams = {
-    group: string;
-  }
-
+  const [newPlayerName,setNewPlayerName] = useState('');
   const [team,setTeam] = useState('Time A');
   const [players, setPlayers] = useState([]);
 
   const route = useRoute()
   const {group} = route.params as RouteParams
+
+  async function handleAddPlayer() {
+    if(newPlayerName.trim().length === 0){
+      return Alert.alert('Nova pessoa', 'Informe o nome da pessoa para adicionar.');
+    }
+    const newPlayer ={
+      name: newPlayerName,
+      team
+    }
+
+    try {
+      await playerAddByGroup(newPlayer,group);
+      const players = await playersGetByGroup(group);
+
+    } catch (error) {
+      if(error instanceof AppError){
+        Alert.alert('Nova Pessoa', error.message)
+      }else{
+        console.log(error)
+        Alert.alert('Nova Pessoa', 'Não foi possível adicionar.')
+      }
+    }
+
+  }
 
   return(
     <Container>
@@ -36,11 +64,12 @@ export function Players(){
 
       <Form>
          <Input 
-        placeholder="Nome da pessoa"
-        autoCorrect={false}
-      />
+         onChangeText={setNewPlayerName}
+          placeholder="Nome da pessoa"
+          autoCorrect={false}
+        />
       
-      <ButtonIcon icon="add"/>
+        <ButtonIcon icon="add" onPress={handleAddPlayer}/>
       </Form>
 
       <HeaderList>
